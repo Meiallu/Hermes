@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.code.gson:gson:2.10.1")
+    compileOnly("org.projectlombok:lombok:1.18.32")
+    annotationProcessor("org.projectlombok:lombok:1.18.32")
+
     implementation("org.objenesis:objenesis:3.2");
 }

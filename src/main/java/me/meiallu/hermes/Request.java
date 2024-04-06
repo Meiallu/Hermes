@@ -1,4 +1,4 @@
-package me.meiallu.hermes.util;
+package me.meiallu.hermes;
 
 public class Request {
 
