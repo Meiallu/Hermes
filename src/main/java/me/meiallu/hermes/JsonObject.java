@@ -105,11 +105,114 @@ public class JsonObject implements JsonElement {
         return writer.toString();
     }
 
+    private void addValue(StringBuilder key, StringBuilder value) {
+        String keyString = key.toString();
+        String valueString = value.toString();
+
+        switch (valueString.charAt(0)) {
+            case '{':
+                JsonObject object = new JsonObject(valueString);
+                add(keyString, object);
+                break;
+            case '[':
+                JsonArray array = new JsonArray(valueString);
+                add(keyString, array);
+                break;
+            default:
+                JsonPrimitive primitive = JsonPrimitive.parsePrimitive(valueString);
+                add(keyString, primitive);
+                break;
+        }
+    }
+
     public JsonObject() {
         this.elements = new HashMap<>();
     }
 
     public JsonObject(String json) {
         this.elements = new HashMap<>();
+        char[] charArray = json.substring(1, json.length() - 1).toCharArray();
+
+        StringBuilder key = new StringBuilder();
+        StringBuilder value = new StringBuilder();
+
+        boolean isKey = true;
+        boolean reading = false;
+
+        boolean restartOnComma = true;
+        int lockNumber = 0;
+        char lockChar = 0;
+
+        for (char character : charArray) {
+            switch (character) {
+                case '[':
+                    if (restartOnComma) {
+                        lockChar = '[';
+                        restartOnComma = false;
+                    }
+
+                    if (lockChar == '[')
+                        lockNumber++;
+                    break;
+                case ']':
+                    if (!restartOnComma && lockChar == '[')
+                        lockNumber--;
+                    if (lockNumber == 0)
+                        restartOnComma = true;
+                    break;
+                case '{':
+                    if (restartOnComma) {
+                        lockChar = '{';
+                        restartOnComma = false;
+                    }
+
+                    if (lockChar == '{')
+                        lockNumber++;
+                    break;
+                case '}':
+                    if (!restartOnComma && lockChar == '{')
+                        lockNumber--;
+                    if (lockNumber == 0)
+                        restartOnComma = true;
+                    break;
+                case '"':
+                    if (!reading) {
+                        reading = true;
+                        isKey = true;
+                        continue;
+                    } else if (isKey) {
+                        reading = false;
+                        isKey = false;
+                        continue;
+                    }
+                    break;
+                case ':':
+                    if (!reading) {
+                        reading = true;
+                        continue;
+                    }
+                    break;
+                case ',':
+                    if (reading && restartOnComma) {
+                        reading = false;
+                        addValue(key, value);
+
+                        key = new StringBuilder();
+                        value = new StringBuilder();
+                        continue;
+                    }
+                    break;
+            }
+
+            if (reading) {
+                if (isKey)
+                    key.append(character);
+                else
+                    value.append(character);
+            }
+        }
+
+        if (!value.isEmpty())
+            addValue(key, value);
     }
 }

@@ -12,7 +12,7 @@ public class JsonPrimitive implements JsonElement {
             return switch (value) {
                 case "true" -> new JsonPrimitive(true);
                 case "false" -> new JsonPrimitive(false);
-                default -> new JsonPrimitive(value);
+                default -> new JsonPrimitive(value.substring(1, value.length() - 1));
             };
         }
     }

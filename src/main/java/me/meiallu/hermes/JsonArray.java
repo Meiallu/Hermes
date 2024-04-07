@@ -89,11 +89,82 @@ public class JsonArray extends ArrayList<JsonElement> implements JsonElement {
         return writer.toString();
     }
 
+    private void addValue(String valueString) {
+        switch (valueString.charAt(0)) {
+            case '{':
+                JsonObject object = new JsonObject(valueString);
+                add(object);
+                break;
+            case '[':
+                JsonArray array = new JsonArray(valueString);
+                add(array);
+                break;
+            default:
+                JsonPrimitive primitive = JsonPrimitive.parsePrimitive(valueString);
+                add(primitive);
+                break;
+        }
+    }
+
     public JsonArray() {
         super();
     }
 
-    public JsonArray(String string) {
+    public JsonArray(String json) {
         super();
+        char[] charArray = json.substring(1, json.length() - 1).toCharArray();
+
+        StringBuilder value = new StringBuilder();
+        boolean restartOnComma = true;
+
+        int lockNumber = 0;
+        char lockChar = 0;
+
+        for (char character : charArray) {
+            switch (character) {
+                case '[':
+                    if (restartOnComma) {
+                        lockChar = '[';
+                        restartOnComma = false;
+                    }
+
+                    if (lockChar == '[')
+                        lockNumber++;
+                    break;
+                case ']':
+                    if (!restartOnComma && lockChar == '[')
+                        lockNumber--;
+                    if (lockNumber == 0)
+                        restartOnComma = true;
+                    break;
+                case '{':
+                    if (restartOnComma) {
+                        lockChar = '{';
+                        restartOnComma = false;
+                    }
+
+                    if (lockChar == '{')
+                        lockNumber++;
+                    break;
+                case '}':
+                    if (!restartOnComma && lockChar == '{')
+                        lockNumber--;
+                    if (lockNumber == 0)
+                        restartOnComma = true;
+                    break;
+                case ',':
+                    if (restartOnComma) {
+                        addValue(value.toString());
+                        value = new StringBuilder();
+                        continue;
+                    }
+                    break;
+            }
+
+            value.append(character);
+        }
+
+        if (!value.isEmpty())
+            addValue(value.toString());
     }
 }
